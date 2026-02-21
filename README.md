@@ -29,13 +29,7 @@ The terminal window resizes automatically to 120×24.
 
 ### Windows
 
-Place `todo.jar` anywhere, e.g. `C:\Users\you\todo\todo.jar`. Create a `todo.bat` file in the same folder:
-
-```bat
-java -jar "%~dp0todo.jar"
-```
-
-Open **Windows Terminal**, set the window size to at least 120×24, then run `todo.bat` (or double-click it).
+Place `todo.jar` and `todo.bat` in the same folder, e.g. `C:\Users\you\todo\`. Open **Windows Terminal** and run `todo.bat` — it sets the window size automatically.
 
 ## Keybindings
 
