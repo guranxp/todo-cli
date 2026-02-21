@@ -17,6 +17,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -120,6 +121,20 @@ public class ListScreen {
         }
     }
 
+    private void drawHeader(final TextGraphics g) {
+        final long   done      = taskList.getAll().stream().filter(Task::done).count();
+        final long   remaining = taskList.getAll().size() - done;
+        final String date      = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        final String right     = done + " done · " + remaining + " remaining · " + date;
+
+        g.setForegroundColor(TextColor.ANSI.CYAN);
+        g.putString(0, 1, " Todo");
+        g.setForegroundColor(TextColor.ANSI.WHITE);
+        g.putString(WIDTH - right.length() - 1, 1, right);
+        g.setForegroundColor(TextColor.ANSI.DEFAULT);
+        g.putString(0, 2, "─".repeat(WIDTH));
+    }
+
     // Draws the full task list with wrapping. Returns the next free row after all tasks.
     private int drawTaskList(final TextGraphics g, final List<Task> tasks, final int cursor, final int startRow, final boolean showTimestamps) {
         int row = startRow;
@@ -145,14 +160,13 @@ public class ListScreen {
         screen.clear();
         final TextGraphics g = screen.newTextGraphics();
 
-        g.setForegroundColor(TextColor.ANSI.CYAN);
-        g.putString(0, 0, " Todo");
+        drawHeader(g);
 
         if (tasks.isEmpty()) {
             g.setForegroundColor(TextColor.ANSI.WHITE);
-            g.putString(0, 2, "  (No tasks – press 'a' to add one)");
+            g.putString(0, 3, "  (No tasks – press 'a' to add one)");
         } else {
-            drawTaskList(g, tasks, cursor, 2, showTimestamps);
+            drawTaskList(g, tasks, cursor, 3, showTimestamps);
         }
 
         g.setForegroundColor(TextColor.ANSI.DEFAULT);
@@ -169,10 +183,9 @@ public class ListScreen {
             screen.clear();
             final TextGraphics g = screen.newTextGraphics();
 
-            g.setForegroundColor(TextColor.ANSI.CYAN);
-            g.putString(0, 0, " Todo");
+            drawHeader(g);
 
-            final int nextRow = drawTaskList(g, tasks, -1, 2, false);
+            final int nextRow = drawTaskList(g, tasks, -1, 3, false);
 
             g.setForegroundColor(TextColor.ANSI.CYAN);
             g.putString(0, nextRow, "  [+] " + buf + "_");
@@ -204,10 +217,9 @@ public class ListScreen {
             screen.clear();
             final TextGraphics g = screen.newTextGraphics();
 
-            g.setForegroundColor(TextColor.ANSI.CYAN);
-            g.putString(0, 0, " Todo");
+            drawHeader(g);
 
-            int row = 2;
+            int row = 3;
             for (int i = 0; i < tasks.size(); i++) {
                 if (i == cursor) {
                     final List<String> lines = wrapText(buf.toString(), TEXT_WIDTH);
