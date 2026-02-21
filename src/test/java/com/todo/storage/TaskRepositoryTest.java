@@ -65,6 +65,38 @@ class TaskRepositoryTest {
     }
 
     @Test
+    void saveDeleted_appendsTaskToDeletedFile() {
+        TaskRepository repository = repo();
+        TaskList list = new TaskList(List.of());
+        Task task = list.add("ta bort mig");
+
+        repository.saveDeleted(task);
+
+        List<Task> deleted = repository.loadDeleted();
+        assertEquals(1, deleted.size());
+        assertEquals("ta bort mig", deleted.get(0).text());
+    }
+
+    @Test
+    void saveDeleted_calledMultipleTimes_accumulates() {
+        TaskRepository repository = repo();
+        TaskList list = new TaskList(List.of());
+        Task t1 = list.add("ett");
+        Task t2 = list.add("två");
+
+        repository.saveDeleted(t1);
+        repository.saveDeleted(t2);
+
+        List<Task> deleted = repository.loadDeleted();
+        assertEquals(2, deleted.size());
+    }
+
+    @Test
+    void loadDeleted_whenFileAbsent_returnsEmptyList() {
+        assertTrue(repo().loadDeleted().isEmpty());
+    }
+
+    @Test
     void save_multipleTimes_overwritesPreviousData() {
         TaskRepository repository = repo();
         TaskList list = new TaskList(List.of());

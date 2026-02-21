@@ -21,10 +21,9 @@ public class TaskList {
         return task;
     }
 
-    public boolean delete(final int index) {
-        if (index < 0 || index >= tasks.size()) return false;
-        tasks.remove(index);
-        return true;
+    public Task delete(final int index) {
+        if (index < 0 || index >= tasks.size()) return null;
+        return tasks.remove(index);
     }
 
     public boolean toggleDone(final int index) {

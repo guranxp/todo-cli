@@ -19,6 +19,7 @@ public class TaskRepository {
     private static final Path DEFAULT_FILE = Path.of(System.getProperty("user.home"), ".todo", "tasks.json");
 
     private final Path         dataFile;
+    private final Path         deletedFile;
     private final ObjectMapper mapper;
 
     public TaskRepository() {
@@ -26,8 +27,9 @@ public class TaskRepository {
     }
 
     public TaskRepository(@NonNull final Path dataFile) {
-        this.dataFile = dataFile;
-        this.mapper   = new ObjectMapper();
+        this.dataFile    = dataFile;
+        this.deletedFile = dataFile.resolveSibling("deleted.json");
+        this.mapper      = new ObjectMapper();
         this.mapper.registerModule(new JavaTimeModule());
         this.mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         this.mapper.enable(SerializationFeature.INDENT_OUTPUT);
@@ -43,6 +45,29 @@ public class TaskRepository {
         } catch (IOException e) {
             System.err.println(Ansi.RED + "Error reading file: " + e.getMessage() + Ansi.RESET);
             return new TaskList(new ArrayList<>());
+        }
+    }
+
+    public void saveDeleted(@NonNull final Task task) {
+        try {
+            Files.createDirectories(deletedFile.getParent());
+            final List<Task> existing = Files.exists(deletedFile)
+                    ? new ArrayList<>(mapper.readValue(deletedFile.toFile(), new TypeReference<>() {}))
+                    : new ArrayList<>();
+            existing.add(task);
+            mapper.writeValue(deletedFile.toFile(), existing);
+        } catch (IOException e) {
+            System.err.println(Ansi.RED + "Error saving deleted task: " + e.getMessage() + Ansi.RESET);
+        }
+    }
+
+    public List<Task> loadDeleted() {
+        if (!Files.exists(deletedFile)) return new ArrayList<>();
+        try {
+            return mapper.readValue(deletedFile.toFile(), new TypeReference<>() {});
+        } catch (IOException e) {
+            System.err.println(Ansi.RED + "Error reading deleted file: " + e.getMessage() + Ansi.RESET);
+            return new ArrayList<>();
         }
     }
 

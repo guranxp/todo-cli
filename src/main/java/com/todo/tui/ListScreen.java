@@ -77,6 +77,7 @@ public class ListScreen {
                     } else if (type == KeyType.Character && key.getCharacter() == 'd' && !tasks.isEmpty()) {
                         final Task t = tasks.get(cursor);
                         taskList.delete(taskList.getAll().indexOf(t));
+                        if (!t.done()) repository.saveDeleted(t);
                         if (cursor > 0 && cursor >= tasks.size() - 1) cursor--;
                     } else if (type == KeyType.Character && key.getCharacter() == 'e' && !tasks.isEmpty()) {
                         final Task   t      = tasks.get(cursor);

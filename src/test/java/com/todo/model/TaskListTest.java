@@ -50,10 +50,18 @@ class TaskListTest {
     }
 
     @Test
-    void delete_outOfBounds_returnsFalse() {
+    void delete_returnsDeletedTask() {
         list.add("a");
-        assertFalse(list.delete(5));
-        assertFalse(list.delete(-1));
+        Task deleted = list.delete(0);
+        assertNotNull(deleted);
+        assertEquals("a", deleted.text());
+    }
+
+    @Test
+    void delete_outOfBounds_returnsNull() {
+        list.add("a");
+        assertNull(list.delete(5));
+        assertNull(list.delete(-1));
     }
 
     // --- toggleDone ---
