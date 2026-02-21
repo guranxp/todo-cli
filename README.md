@@ -13,10 +13,14 @@ A terminal-based personal task manager. Stays open all day in a terminal window 
 mvn package
 ```
 
+## Download
+
+Download the latest `todo.jar` from [Releases](https://github.com/guranxp/todo-cli/releases/latest).
+
 ## Run
 
 ```
-java -jar target/todo.jar
+java -jar todo.jar
 ```
 
 On macOS/Linux the terminal window resizes automatically to 120×24. On Windows, set your terminal window to at least 120×24 before launching.
