@@ -19,11 +19,23 @@ Download the latest `todo.jar` from [Releases](https://github.com/guranxp/todo-c
 
 ## Run
 
+### macOS / Linux
+
 ```
 java -jar todo.jar
 ```
 
-On macOS/Linux the terminal window resizes automatically to 120×24. On Windows, set your terminal window to at least 120×24 before launching.
+The terminal window resizes automatically to 120×24.
+
+### Windows
+
+Place `todo.jar` anywhere, e.g. `C:\Users\you\todo\todo.jar`. Create a `todo.bat` file in the same folder:
+
+```bat
+java -jar "%~dp0todo.jar"
+```
+
+Open **Windows Terminal**, set the window size to at least 120×24, then run `todo.bat` (or double-click it).
 
 ## Keybindings
 
