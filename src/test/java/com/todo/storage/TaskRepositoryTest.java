@@ -5,10 +5,12 @@ import com.todo.model.TaskList;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class TaskRepositoryTest {
 
@@ -23,6 +25,27 @@ class TaskRepositoryTest {
     void load_whenFileAbsent_returnsEmptyList() {
         TaskList result = repo().load();
         assertTrue(result.getAll().isEmpty());
+    }
+
+    @Test
+    void load_whenFileIsCorrupt_throwsStorageException() throws Exception {
+        Path file = tempDir.resolve("tasks.json");
+        Files.writeString(file, "not valid json");
+        assertThrows(StorageException.class, () -> new TaskRepository(file).load());
+    }
+
+    @Test
+    void save_whenDirectoryNotWritable_throwsStorageException() {
+        Path readOnlyDir = tempDir.resolve("readonly");
+        readOnlyDir.toFile().mkdirs();
+        readOnlyDir.toFile().setWritable(false);
+        Path file = readOnlyDir.resolve("tasks.json");
+        TaskList list = new TaskList(List.of());
+        list.add("test");
+        // Only run on systems that support read-only dirs (not Windows as admin)
+        assumeTrue(!System.getProperty("os.name", "").toLowerCase().contains("win"));
+        assertThrows(StorageException.class, () -> new TaskRepository(file).save(list));
+        readOnlyDir.toFile().setWritable(true);
     }
 
     @Test

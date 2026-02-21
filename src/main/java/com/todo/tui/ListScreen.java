@@ -11,6 +11,7 @@ import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
 import com.todo.model.Task;
 import com.todo.model.TaskList;
+import com.todo.storage.StorageException;
 import com.todo.storage.TaskRepository;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +46,7 @@ public class ListScreen {
             int     cursor         = 0;
             boolean showTimestamps = false;
 
+            boolean saveError = false;
             try {
                 while (true) {
                     final List<Task> tasks = showAll ? taskList.getAll() : taskList.getOpen();
@@ -103,10 +105,15 @@ public class ListScreen {
                         break;
                     }
                 }
+            } catch (StorageException e) {
+                saveError = true;
+                try { showError(screen, e.getMessage()); } catch (IOException ignored) {}
             } finally {
                 screen.stopScreen();
                 terminal.close();
-                repository.save(taskList);
+                if (!saveError) {
+                    try { repository.save(taskList); } catch (StorageException ignored) {}
+                }
             }
         } catch (IOException e) {
             System.err.println("TUI error: " + e.getMessage());
@@ -250,6 +257,17 @@ public class ListScreen {
         screen.refresh();
         try { Thread.sleep(700); } catch (InterruptedException ignored) {}
         draw(screen, tasks, cursor, showTimestamps);
+    }
+
+    private void showError(final Screen screen, final String message) throws IOException {
+        screen.clear();
+        final TextGraphics g = screen.newTextGraphics();
+        g.setForegroundColor(TextColor.ANSI.RED);
+        g.putString(0, 0, " Error: " + message);
+        g.setForegroundColor(TextColor.ANSI.YELLOW);
+        g.putString(0, 2, " Press any key to exit.");
+        screen.refresh();
+        try { screen.readInput(); } catch (IOException ignored) {}
     }
 
     // Wraps text + timestamp: text wraps at TEXT_WIDTH, timestamp appended to last line if it fits.

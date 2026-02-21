@@ -43,8 +43,7 @@ public class TaskRepository {
             final List<Task> tasks = mapper.readValue(dataFile.toFile(), new TypeReference<>() {});
             return new TaskList(tasks);
         } catch (IOException e) {
-            System.err.println(Ansi.RED + "Error reading file: " + e.getMessage() + Ansi.RESET);
-            return new TaskList(new ArrayList<>());
+            throw new StorageException("Could not read " + dataFile + ": " + e.getMessage(), e);
         }
     }
 
@@ -76,7 +75,7 @@ public class TaskRepository {
             Files.createDirectories(dataFile.getParent());
             mapper.writeValue(dataFile.toFile(), taskList.getAll());
         } catch (IOException e) {
-            System.err.println(Ansi.RED + "Error saving file: " + e.getMessage() + Ansi.RESET);
+            throw new StorageException("Could not save " + dataFile + ": " + e.getMessage(), e);
         }
     }
 }
