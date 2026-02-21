@@ -1,5 +1,6 @@
 # todo-cli setup script for Windows
-# Run with: irm https://raw.githubusercontent.com/guranxp/todo-cli/main/setup.ps1 | iex
+# Run with:
+# powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/guranxp/todo-cli/main/setup.ps1 | iex"
 
 $ErrorActionPreference = "Stop"
 $installDir = "$env:USERPROFILE\todo"
@@ -7,23 +8,31 @@ $installDir = "$env:USERPROFILE\todo"
 Write-Host ""
 Write-Host "=== todo-cli setup ===" -ForegroundColor Cyan
 
-# Check Java
+# Check Java 21+
 Write-Host ""
 Write-Host "Checking Java..." -ForegroundColor Yellow
 $javaOk = $false
 try {
     $version = (java -version 2>&1 | Select-String "version").ToString()
-    if ($version -match '"(2[1-9]|[3-9]\d)\.' -or $version -match '"21') {
+    if ($version -match '"(21|2[2-9]|[3-9]\d)\.') {
         Write-Host "Java 21+ found." -ForegroundColor Green
         $javaOk = $true
     }
 } catch {}
 
 if (-not $javaOk) {
-    Write-Host "Java 21 not found. Installing via winget..." -ForegroundColor Yellow
-    winget install Microsoft.OpenJDK.21 --accept-package-agreements --accept-source-agreements
-    Write-Host "Java installed. Please restart this script in a new terminal." -ForegroundColor Green
-    exit 0
+    Write-Host "Java 21 not found. Installing (user scope, no admin needed)..." -ForegroundColor Yellow
+    try {
+        winget install Microsoft.OpenJDK.21 --scope user --accept-package-agreements --accept-source-agreements
+        Write-Host "Java installed." -ForegroundColor Green
+
+        # Refresh PATH so java is available in this session
+        $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "User") + ";" + $env:PATH
+    } catch {
+        Write-Host "Could not install Java automatically." -ForegroundColor Red
+        Write-Host "Please install Java 21 manually from https://adoptium.net and re-run this script." -ForegroundColor Yellow
+        exit 1
+    }
 }
 
 # Create install directory

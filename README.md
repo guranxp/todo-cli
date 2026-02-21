@@ -32,10 +32,14 @@ The terminal window resizes automatically to 120×24.
 Open **Windows Terminal** and run:
 
 ```powershell
-irm https://raw.githubusercontent.com/guranxp/todo-cli/main/setup.ps1 | iex
+powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/guranxp/todo-cli/main/setup.ps1 | iex"
 ```
 
-This installs Java 21 (if needed) and sets up todo-cli in `%USERPROFILE%\todo\` automatically.
+This handles everything automatically:
+- Bypasses PowerShell execution policy
+- Installs Java 21 per-user via winget (no admin rights needed)
+- Downloads `todo.jar` to `%USERPROFILE%\todo\`
+- Creates `todo.bat` that sets the window size and launches the app
 
 ## Keybindings
 
