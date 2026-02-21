@@ -52,9 +52,26 @@ mode con: cols=120 lines=24
 java -jar "%~dp0todo.jar"
 "@ | Set-Content "$installDir\todo.bat"
 
+# Create Start menu shortcut
+Write-Host "Creating Start menu shortcut..." -ForegroundColor Yellow
+$startMenu = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs"
+$shortcutPath = "$startMenu\todo.lnk"
+$wsh = New-Object -ComObject WScript.Shell
+$shortcut = $wsh.CreateShortcut($shortcutPath)
+
+$wtExe = (Get-Command wt.exe -ErrorAction SilentlyContinue)?.Source
+if ($wtExe) {
+    $shortcut.TargetPath = $wtExe
+    $shortcut.Arguments = "cmd /c `"$installDir\todo.bat`""
+} else {
+    $shortcut.TargetPath = "cmd.exe"
+    $shortcut.Arguments = "/c `"$installDir\todo.bat`""
+}
+$shortcut.WorkingDirectory = $installDir
+$shortcut.Description = "todo-cli"
+$shortcut.Save()
+
 Write-Host ""
 Write-Host "Done! todo-cli installed to $installDir" -ForegroundColor Green
-Write-Host ""
-Write-Host "To run: open Windows Terminal and type:" -ForegroundColor Cyan
-Write-Host "  $installDir\todo.bat" -ForegroundColor White
+Write-Host "Start menu shortcut created — search for 'todo' in the Start menu." -ForegroundColor Green
 Write-Host ""

@@ -40,6 +40,7 @@ This handles everything automatically:
 - Installs Java 21 per-user via winget (no admin rights needed)
 - Downloads `todo.jar` to `%USERPROFILE%\todo\`
 - Creates `todo.bat` that sets the window size and launches the app
+- Adds a **Start menu shortcut** — search for "todo" to launch directly
 
 ## Keybindings
 
