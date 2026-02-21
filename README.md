@@ -29,7 +29,13 @@ The terminal window resizes automatically to 120×24.
 
 ### Windows
 
-Place `todo.jar` and `todo.bat` in the same folder, e.g. `C:\Users\you\todo\`. Open **Windows Terminal** and run `todo.bat` — it sets the window size automatically.
+Open **Windows Terminal** and run:
+
+```powershell
+irm https://raw.githubusercontent.com/guranxp/todo-cli/main/setup.ps1 | iex
+```
+
+This installs Java 21 (if needed) and sets up todo-cli in `%USERPROFILE%\todo\` automatically.
 
 ## Keybindings
 
