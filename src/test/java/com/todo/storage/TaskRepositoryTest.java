@@ -26,6 +26,54 @@ class TaskRepositoryTest {
     }
 
     @Test
+    void save_afterDelete_taskIsGone() {
+        TaskRepository repository = repo();
+        TaskList list = new TaskList(List.of());
+        list.add("ta bort mig");
+        list.add("behåll mig");
+        repository.save(list);
+
+        list.delete(0);
+        repository.save(list);
+
+        List<Task> loaded = repository.load().getAll();
+        assertEquals(1, loaded.size());
+        assertEquals("behåll mig", loaded.get(0).text());
+    }
+
+    @Test
+    void save_afterToggleDone_persistsDoneState() {
+        TaskRepository repository = repo();
+        TaskList list = new TaskList(List.of());
+        list.add("en task");
+        repository.save(list);
+
+        list.toggleDone(0);
+        repository.save(list);
+
+        assertTrue(repository.load().getAll().get(0).done());
+
+        list.toggleDone(0);
+        repository.save(list);
+
+        assertFalse(repository.load().getAll().get(0).done());
+    }
+
+    @Test
+    void save_afterEditText_persistsUpdatedText() {
+        TaskRepository repository = repo();
+        TaskList list = new TaskList(List.of());
+        list.add("original text");
+        repository.save(list);
+
+        list.updateText(0, "updated text");
+        repository.save(list);
+
+        TaskList loaded = repository.load();
+        assertEquals("updated text", loaded.getAll().get(0).text());
+    }
+
+    @Test
     void saveAndLoad_roundtrip_preservesAllFields() {
         TaskRepository repository = repo();
         TaskList original = new TaskList(List.of());
