@@ -155,8 +155,9 @@ public class ListScreen {
             drawTaskList(g, tasks, cursor, 2, showTimestamps);
         }
 
-        g.setForegroundColor(TextColor.ANSI.YELLOW);
-        g.putString(0, HEIGHT - 2, "  ↑↓ navigate  Enter toggle  a add  d delete  e edit  t timestamps  Shift+↑↓ move  q quit");
+        g.setForegroundColor(TextColor.ANSI.DEFAULT);
+        g.putString(0, HEIGHT - 3, "─".repeat(WIDTH));
+        drawHints(g, HEIGHT - 2, "↑↓", "navigate", "Enter", "toggle", "a", "add", "d", "delete", "e", "edit", "t", "timestamps", "Shift+↑↓", "move", "q", "quit");
 
         screen.refresh();
     }
@@ -176,8 +177,9 @@ public class ListScreen {
             g.setForegroundColor(TextColor.ANSI.CYAN);
             g.putString(0, nextRow, "  [+] " + buf + "_");
 
-            g.setForegroundColor(TextColor.ANSI.YELLOW);
-            g.putString(0, HEIGHT - 2, "  Enter confirm  Esc cancel");
+            g.setForegroundColor(TextColor.ANSI.DEFAULT);
+            g.putString(0, HEIGHT - 3, "─".repeat(WIDTH));
+            drawHints(g, HEIGHT - 2, "Enter", "confirm", "Esc", "cancel");
             screen.refresh();
 
             final KeyStroke key  = screen.readInput();
@@ -228,8 +230,9 @@ public class ListScreen {
                 }
             }
 
-            g.setForegroundColor(TextColor.ANSI.YELLOW);
-            g.putString(0, HEIGHT - 2, "  Enter confirm  Esc cancel");
+            g.setForegroundColor(TextColor.ANSI.DEFAULT);
+            g.putString(0, HEIGHT - 3, "─".repeat(WIDTH));
+            drawHints(g, HEIGHT - 2, "Enter", "confirm", "Esc", "cancel");
             screen.refresh();
 
             final KeyStroke key  = screen.readInput();
@@ -268,6 +271,24 @@ public class ListScreen {
         g.putString(0, 2, " Press any key to exit.");
         screen.refresh();
         try { screen.readInput(); } catch (IOException ignored) {}
+    }
+
+    // Renders key-description pairs with │ separators: keys in yellow, descriptions in white.
+    private void drawHints(final TextGraphics g, final int row, final String... pairs) {
+        int col = 2;
+        for (int i = 0; i < pairs.length; i += 2) {
+            if (i > 0) {
+                g.setForegroundColor(TextColor.ANSI.DEFAULT);
+                g.putString(col, row, " │ ");
+                col += 3;
+            }
+            g.setForegroundColor(TextColor.ANSI.YELLOW);
+            g.putString(col, row, pairs[i]);
+            col += pairs[i].length();
+            g.setForegroundColor(TextColor.ANSI.WHITE);
+            g.putString(col, row, " " + pairs[i + 1]);
+            col += 1 + pairs[i + 1].length();
+        }
     }
 
     // Wraps text + timestamp: text wraps at TEXT_WIDTH, timestamp appended to last line if it fits.
