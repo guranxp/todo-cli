@@ -1,0 +1,20 @@
+# Ignore IntelliJ-specific project settings
+.idea/
+*.iml
+out/
+gen/
+
+# Ignore external libraries (JDK 21)
+External Libraries/
+
+# Ignore scratch files and consoles
+Scratches and Consoles/
+
+# Ignore common Java build artifacts
+target/
+build/
+*.class
+*.jar
+
+# Ignore version control (already handled by default, but safe to keep)
+.git/
