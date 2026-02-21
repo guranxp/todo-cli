@@ -29,7 +29,7 @@ The terminal window resizes automatically to 120×24.
 
 ### Windows
 
-Open **Windows Terminal** and run:
+Open **Windows Terminal** (press `Win` → type "Terminal" → Enter) and run:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/guranxp/todo-cli/main/setup.ps1 | iex"
