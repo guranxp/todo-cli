@@ -47,6 +47,12 @@ Place `todo.jar` and `todo.bat` in the same folder, e.g. `C:\Users\you\todo\`. O
 
 ## Data
 
-Tasks are stored in `~/.todo/tasks.json`. Deleted tasks (that were not done) are archived to `~/.todo/deleted.json`.
+| Platform | Location |
+|---|---|
+| macOS / Linux | `~/.todo/` |
+| Windows | `%USERPROFILE%\.todo\` |
+
+- `tasks.json` — active tasks
+- `deleted.json` — deleted tasks that were not done
 
 Changes to add, edit, toggle and delete are saved immediately. Reordering is saved on quit or `Ctrl+S`.
