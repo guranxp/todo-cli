@@ -27,8 +27,10 @@ public class ListScreen {
     private static final DateTimeFormatter FMT        = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private static final int               WIDTH      = 120;
     private static final int               HEIGHT     = 24;
-    private static final int               TEXT_START = 6;   // "  [ ] " prefix width
+    private static final int               TEXT_START = 10;  // "  99. [ ] " prefix width
     private static final int               TEXT_WIDTH = WIDTH - TEXT_START;
+    private static final int               TASK_START = 3;   // first row for tasks
+    private static final int               TASK_END   = HEIGHT - 4; // last row for tasks
 
     @NonNull private final TaskList       taskList;
     @NonNull private final TaskRepository repository;
@@ -45,6 +47,7 @@ public class ListScreen {
             screen.setCursorPosition(null);
 
             int     cursor         = 0;
+            int     scrollOffset   = 0;
             boolean showTimestamps = false;
 
             boolean saveError = false;
@@ -53,8 +56,9 @@ public class ListScreen {
                     final List<Task> tasks = showAll ? taskList.getAll() : taskList.getOpen();
                     if (!tasks.isEmpty() && cursor >= tasks.size()) cursor = tasks.size() - 1;
                     if (cursor < 0) cursor = 0;
+                    scrollOffset = adjustScroll(tasks, cursor, scrollOffset);
 
-                    draw(screen, tasks, cursor, showTimestamps);
+                    draw(screen, tasks, cursor, showTimestamps, scrollOffset);
 
                     final KeyStroke key  = screen.readInput();
                     final KeyType   type = key.getKeyType();
@@ -88,7 +92,7 @@ public class ListScreen {
                         if (cursor > 0 && cursor >= tasks.size() - 1) cursor--;
                     } else if (type == KeyType.Character && key.getCharacter() == 'e' && !tasks.isEmpty()) {
                         final Task   t      = tasks.get(cursor);
-                        final String edited = editInline(screen, tasks, cursor, t.text());
+                        final String edited = editInline(screen, tasks, cursor, t.text(), scrollOffset);
                         if (edited != null && !edited.isBlank()) {
                             taskList.updateText(taskList.getAll().indexOf(t), edited.trim());
                             repository.save(taskList);
@@ -97,7 +101,7 @@ public class ListScreen {
                         showTimestamps = !showTimestamps;
                     } else if (type == KeyType.Character && key.isCtrlDown() && key.getCharacter() == 's') {
                         repository.save(taskList);
-                        showSaved(screen, tasks, cursor, showTimestamps);
+                        showSaved(screen, tasks, cursor, showTimestamps, scrollOffset);
                     } else if (type == KeyType.Character && key.getCharacter() == 'q') {
                         break;
                     } else if (type == KeyType.Escape) {
@@ -121,6 +125,22 @@ public class ListScreen {
         }
     }
 
+    private int adjustScroll(final List<Task> tasks, final int cursor, int scrollOffset) {
+        if (tasks.isEmpty()) return 0;
+        if (cursor < scrollOffset) return cursor;
+        final int available = TASK_END - TASK_START + 1;
+        while (scrollOffset <= cursor) {
+            int rows = 0;
+            for (int i = scrollOffset; i < tasks.size(); i++) {
+                rows += wrapText(tasks.get(i).text(), TEXT_WIDTH).size();
+                if (i == cursor) return scrollOffset;
+                if (rows >= available) break;
+            }
+            scrollOffset++;
+        }
+        return Math.min(scrollOffset, cursor);
+    }
+
     private void drawHeader(final TextGraphics g) {
         final long   done      = taskList.getAll().stream().filter(Task::done).count();
         final long   remaining = taskList.getAll().size() - done;
@@ -135,28 +155,36 @@ public class ListScreen {
         g.putString(0, 2, "─".repeat(WIDTH));
     }
 
-    // Draws the full task list with wrapping. Returns the next free row after all tasks.
-    private int drawTaskList(final TextGraphics g, final List<Task> tasks, final int cursor, final int startRow, final boolean showTimestamps) {
+    // Draws the task list with scrolling and line numbers. Returns the next free row.
+    private int drawTaskList(final TextGraphics g, final List<Task> tasks, final int cursor,
+                              final int startRow, final boolean showTimestamps, final int scrollOffset) {
+        return drawTaskList(g, tasks, cursor, startRow, showTimestamps, scrollOffset, TASK_END);
+    }
+
+    private int drawTaskList(final TextGraphics g, final List<Task> tasks, final int cursor,
+                              final int startRow, final boolean showTimestamps, final int scrollOffset, final int maxRow) {
         int row = startRow;
-        for (int i = 0; i < tasks.size(); i++) {
-            final Task         t        = tasks.get(i);
-            final boolean      active   = (i == cursor);
-            final String       prefix   = active   ? "▶ " : "  ";
-            final String       checkbox = t.done() ? "[x] " : "[ ] ";
-            final String       ts       = showTimestamps && t.createdAt() != null ? "  " + FMT.format(t.createdAt()) : "";
-            final List<String> lines    = wrapWithTimestamp(t.text(), ts);
+        for (int i = scrollOffset; i < tasks.size(); i++) {
+            if (row > maxRow) break;
+            final Task         t      = tasks.get(i);
+            final boolean      active = (i == cursor);
+            final String       prefix = (active ? "▶ " : "  ") + String.format("%2d", i + 1) + ". " + (t.done() ? "[x] " : "[ ] ");
+            final String       ts     = showTimestamps && t.createdAt() != null ? "  " + FMT.format(t.createdAt()) : "";
+            final List<String> lines  = wrapWithTimestamp(t.text(), ts);
 
             g.setForegroundColor(t.done() ? TextColor.ANSI.GREEN : TextColor.ANSI.WHITE);
-            g.putString(0, row, prefix + checkbox + lines.get(0));
+            g.putString(0, row, prefix + lines.get(0));
             for (int j = 1; j < lines.size(); j++) {
-                g.putString(0, row + j, "      " + lines.get(j));
+                if (row + j > maxRow) break;
+                g.putString(0, row + j, "          " + lines.get(j));
             }
             row += lines.size();
         }
         return row;
     }
 
-    private void draw(final Screen screen, final List<Task> tasks, final int cursor, final boolean showTimestamps) throws IOException {
+    private void draw(final Screen screen, final List<Task> tasks, final int cursor,
+                      final boolean showTimestamps, final int scrollOffset) throws IOException {
         screen.clear();
         final TextGraphics g = screen.newTextGraphics();
 
@@ -164,9 +192,9 @@ public class ListScreen {
 
         if (tasks.isEmpty()) {
             g.setForegroundColor(TextColor.ANSI.WHITE);
-            g.putString(0, 3, "  (No tasks – press 'a' to add one)");
+            g.putString(0, TASK_START, "  (No tasks – press 'a' to add one)");
         } else {
-            drawTaskList(g, tasks, cursor, 3, showTimestamps);
+            drawTaskList(g, tasks, cursor, TASK_START, showTimestamps, scrollOffset);
         }
 
         g.setForegroundColor(TextColor.ANSI.DEFAULT);
@@ -185,7 +213,7 @@ public class ListScreen {
 
             drawHeader(g);
 
-            final int nextRow = drawTaskList(g, tasks, -1, 3, false);
+            final int nextRow = Math.min(drawTaskList(g, tasks, -1, TASK_START, false, 0, TASK_END - 1), TASK_END);
 
             g.setForegroundColor(TextColor.ANSI.CYAN);
             g.putString(0, nextRow, "  [+] " + buf + "_");
@@ -210,7 +238,8 @@ public class ListScreen {
         }
     }
 
-    private String editInline(final Screen screen, final List<Task> tasks, final int cursor, final String current) throws IOException {
+    private String editInline(final Screen screen, final List<Task> tasks, final int cursor,
+                               final String current, final int scrollOffset) throws IOException {
         final StringBuilder buf = new StringBuilder(current);
 
         while (true) {
@@ -219,14 +248,17 @@ public class ListScreen {
 
             drawHeader(g);
 
-            int row = 3;
-            for (int i = 0; i < tasks.size(); i++) {
+            int row = TASK_START;
+            for (int i = scrollOffset; i < tasks.size(); i++) {
+                if (row > TASK_END) break;
+                final String num = String.format("%2d", i + 1);
                 if (i == cursor) {
                     final List<String> lines = wrapText(buf.toString(), TEXT_WIDTH);
                     g.setForegroundColor(TextColor.ANSI.CYAN);
-                    g.putString(0, row, "▶ [e] " + lines.get(0) + (lines.size() == 1 ? "_" : ""));
+                    g.putString(0, row, "▶ " + num + ". [e] " + lines.get(0) + (lines.size() == 1 ? "_" : ""));
                     for (int j = 1; j < lines.size(); j++) {
-                        g.putString(0, row + j, "      " + lines.get(j) + (j == lines.size() - 1 ? "_" : ""));
+                        if (row + j > TASK_END) break;
+                        g.putString(0, row + j, "          " + lines.get(j) + (j == lines.size() - 1 ? "_" : ""));
                     }
                     row += lines.size();
                 } else {
@@ -234,9 +266,10 @@ public class ListScreen {
                     final List<String> lines = wrapWithTimestamp(t.text(),
                             t.createdAt() != null ? "  " + FMT.format(t.createdAt()) : "");
                     g.setForegroundColor(t.done() ? TextColor.ANSI.GREEN : TextColor.ANSI.WHITE);
-                    g.putString(0, row, "  " + (t.done() ? "[x] " : "[ ] ") + lines.get(0));
+                    g.putString(0, row, "  " + num + ". " + (t.done() ? "[x] " : "[ ] ") + lines.get(0));
                     for (int j = 1; j < lines.size(); j++) {
-                        g.putString(0, row + j, "      " + lines.get(j));
+                        if (row + j > TASK_END) break;
+                        g.putString(0, row + j, "          " + lines.get(j));
                     }
                     row += lines.size();
                 }
@@ -264,14 +297,15 @@ public class ListScreen {
         }
     }
 
-    private void showSaved(final Screen screen, final List<Task> tasks, final int cursor, final boolean showTimestamps) throws IOException {
+    private void showSaved(final Screen screen, final List<Task> tasks, final int cursor,
+                            final boolean showTimestamps, final int scrollOffset) throws IOException {
         screen.clear();
         final TextGraphics g = screen.newTextGraphics();
         g.setForegroundColor(TextColor.ANSI.GREEN);
         g.putString(0, 0, "✔ Saved.");
         screen.refresh();
         try { Thread.sleep(700); } catch (InterruptedException ignored) {}
-        draw(screen, tasks, cursor, showTimestamps);
+        draw(screen, tasks, cursor, showTimestamps, scrollOffset);
     }
 
     private void showError(final Screen screen, final String message) throws IOException {
@@ -319,7 +353,7 @@ public class ListScreen {
     private List<String> wrapText(String text, final int maxWidth) {
         final List<String> lines = new ArrayList<>();
         while (text.length() > maxWidth) {
-            int breakAt  = maxWidth;
+            int breakAt   = maxWidth;
             int lastSpace = text.lastIndexOf(' ', maxWidth);
             if (lastSpace > maxWidth / 2) breakAt = lastSpace;
             lines.add(text.substring(0, breakAt).stripTrailing());
