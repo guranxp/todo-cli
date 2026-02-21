@@ -5,6 +5,7 @@ A terminal-based personal task manager. Stays open all day in a terminal window 
 ## Requirements
 
 - Java 21
+- macOS / Linux / Windows (Windows Terminal recommended)
 
 ## Build
 
@@ -18,7 +19,7 @@ mvn package
 java -jar target/todo.jar
 ```
 
-The terminal window resizes automatically to 120×24.
+On macOS/Linux the terminal window resizes automatically to 120×24. On Windows, set your terminal window to at least 120×24 before launching.
 
 ## Keybindings
 

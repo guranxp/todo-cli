@@ -279,6 +279,8 @@ public class ListScreen {
     }
 
     private static void resizeTerminalWindow() {
+        // Resize escape sequence only works on xterm-compatible terminals (macOS/Linux)
+        if (System.getProperty("os.name", "").toLowerCase().contains("win")) return;
         System.out.print("\033[8;" + HEIGHT + ";" + WIDTH + "t");
         System.out.flush();
         try { Thread.sleep(100); } catch (InterruptedException ignored) {}
